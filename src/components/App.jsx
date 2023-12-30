@@ -1,16 +1,75 @@
+import React, { useState, useEffect } from 'react';
+import { customAlphabet } from 'nanoid';
+import { AddContactForm } from './AddContactForm/AddContactForm';
+import { ContactList } from './ContactList/ContactList';
+import { Filter } from './Filter/Filter';
+import css from './App.module.css';
+
+const nanoid = customAlphabet('1234567890abcdef', 4);
+
 export const App = () => {
+  const [contacts, setContacts] = useState(() => {
+    const savedContacts = localStorage.getItem('contacts');
+    return savedContacts
+      ? JSON.parse(savedContacts)
+      : [
+          { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+          { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+          { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+          { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+        ];
+  });
+
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    const stringifiedContacts = JSON.stringify(contacts);
+    localStorage.setItem('contacts', stringifiedContacts);
+  }, [contacts]);
+
+  const handleAddContact = formData => {
+    const hasDuplicates = contacts.some(
+      contact => contact.name.toLowerCase() === formData.name.toLowerCase()
+    );
+    if (hasDuplicates) {
+      alert(`${formData.name} is already in contacts!`);
+      return;
+    }
+
+    const finalContact = {
+      ...formData,
+      id: nanoid(),
+    };
+
+    setContacts(prevContacts => {
+      return [...prevContacts, finalContact];
+    });
+  };
+
+  const handleChangeFilter = event => {
+    setFilter(event.target.value);
+  };
+
+  const handleDeleteContact = contactId => {
+    setContacts(contacts.filter(contact => contact.id !== contactId));
+  };
+
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(filter.trim().toLowerCase())
+  );
+
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: 40,
-        color: '#010101'
-      }}
-    >
-      React homework template
+    <div>
+      <h1 className={css.mainTitle}>Phonebook</h1>
+      <AddContactForm handleAddContact={handleAddContact} />
+
+      <h2 className={css.contactsTitle}>Contacts</h2>
+      <Filter filter={filter} handleChangeFilter={handleChangeFilter} />
+
+      <ContactList
+        contacts={filteredContacts}
+        handleDeleteContact={handleDeleteContact}
+      />
     </div>
   );
 };
